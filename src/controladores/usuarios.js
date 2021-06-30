@@ -33,6 +33,11 @@ const cadastrarUsuario = async (req, res) => {
         }
 
         const usuarioCadastrado = await knex('usuarios').insert(cadastro).returning(['nome', 'email']);
+        
+        if(usuarioCadastrado.length > 0) {
+            return res.status(400).json('Não foi possível cadastrar usuario');
+        }
+        
         return res.status(200).json(usuarioCadastrado);
 
     } catch (error) {
