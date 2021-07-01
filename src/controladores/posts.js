@@ -3,22 +3,16 @@ const jwt = require('jsonwebtoken');
 const segredo = require('../segredo');
 
 const criarPost = async (req, res) => {
-    const {texto, token} = req.body;
+    const {texto} = req.body;
+    const {usuario} = req;
     if(!texto) {
         return res.status(400).json("O campo texto é obrigatório");
     }
-    if(!token) {
-        return res.status(400).json("O campo token é obrigatório");
-    }
 
     try {
-        const { id } = jwt.verify(token, segredo);
-        const usuario = await knex('usuarios').where('id', id);
-        if(usuario.length === 0) {
-            return res.status(400).json('Usuario não encontrado');
-        }
+        
         const postUsuario = {
-            usuario_id: id,
+            usuario_id: usuario.id,
             texto
         }
         const postagem = await knex('postagens').insert(postUsuario).returning('texto');
@@ -33,30 +27,20 @@ const criarPost = async (req, res) => {
 }
 
 const atualizarPost = async (req, res) => {
-    const {texto, token} = req.body;
+    const {texto} = req.body;
+    const {usuario} = req;
+
     const idPost = req.params.id;
     if(!texto) {
         return res.status(400).json("O campo texto é obrigatório");
-    }
-    if(!token) {
-        return res.status(400).json("O campo token é obrigatório");
     }
     if(!idPost) {
         return res.status(400).json("O id do Post é parametro obrigatório");
     }
 
     try {
-        const { id } = jwt.verify(token, segredo);
-
-        const verificarPostagem = await knex('postagens').where({
-            id: idPost,
-            usuario_id: id
-        });
-        if(verificarPostagem.length === 0) {
-            return res.status(400).json('Postagem ou usuario não encontrado');
-        }
         
-        const postagemEditada = await knex('postagens').update('texto', texto).where({id: idPost, usuario_id: id}).returning('texto');
+        const postagemEditada = await knex('postagens').update('texto', texto).where({id: idPost, usuario_id: usuario.id}).returning('texto');
         if(postagemEditada.length === 0){
             return res.status(500).json('Erro ao fazer postagem');
         }
@@ -67,7 +51,32 @@ const atualizarPost = async (req, res) => {
     }
 }
 
+const deletarPost = async (req, res) => {
+    const idPost = req.params.id;
+    const {usuario} = req
+
+    if(!idPost) {
+        return res.status(400).json("O id do Post é parametro obrigatório");
+    }
+
+    try {
+        const postRemovido = await knex('postagens').where({id: idPost, usuario_id: usuario.id}).delete('*').debug();
+        if(postRemovido.length === 0) {
+            return res.status(400).json('Falha ao excluir postagem');
+        }
+        
+        return res.status(200).json(postRemovido);
+    } catch (error) {
+        return res.status(400).json(error.message);
+    }
+}
+
+/* const listarPosts = async (req, res) => {
+
+} */
+
 module.exports = {
     criarPost,
-    atualizarPost
+    atualizarPost,
+    deletarPost
 }
