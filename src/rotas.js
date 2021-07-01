@@ -11,7 +11,7 @@ rotas.get('/login', login);
 
 
 rotas.post('/postagens', posts.criarPost);
-rotas.put('/postagens', posts.atualizarPost);
+rotas.patch('/postagens/:id', posts.atualizarPost);
 
 
 module.exports = rotas;
